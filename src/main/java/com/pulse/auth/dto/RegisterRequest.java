@@ -1,5 +1,6 @@
 package com.pulse.auth.dto;
 
+
 import java.util.Objects;
 
 public class RegisterRequest {
