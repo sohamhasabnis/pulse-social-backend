@@ -22,6 +22,6 @@ public class GlobalExceptionHandler {
 
            return new ResponseEntity<>(errorResponseDTO, HttpStatus.CONFLICT);
        }
-       return
+       return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 }
