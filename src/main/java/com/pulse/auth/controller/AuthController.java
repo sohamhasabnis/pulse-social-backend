@@ -1,11 +1,13 @@
 package com.pulse.auth.controller;
 
+import com.pulse.auth.dto.LoginRequest;
 import com.pulse.auth.dto.RegisterRequest;
 import com.pulse.auth.dto.RegisterResponse;
+import com.pulse.auth.service.UserLoginService;
 import com.pulse.auth.service.UserRegistrationService;
+import com.pulse.common.exception.AuthenticationFailedException;
 import com.pulse.common.exception.GlobalDbException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,10 +20,12 @@ import org.springframework.web.client.HttpClientErrorException;
 public class AuthController {
 
     private final UserRegistrationService userRegistrationService;
+    private final UserLoginService userLoginService;
 
 
-    public AuthController(UserRegistrationService userRegistrationService) {
+    public AuthController(UserRegistrationService userRegistrationService, UserLoginService userLoginService) {
         this.userRegistrationService = userRegistrationService;
+        this.userLoginService = userLoginService;
     }
 
     @PostMapping("/register")
@@ -33,4 +37,11 @@ public class AuthController {
         RegisterResponse response = userRegistrationService.createUser(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
+
+    @PostMapping("/login")
+    public ResponseEntity<RegisterResponse> login(@RequestBody LoginRequest loginRequest) throws GlobalDbException {
+        RegisterResponse registerResponse = userLoginService.login(loginRequest);
+        return new ResponseEntity<>(registerResponse, HttpStatus.OK);
+    }
+
 }

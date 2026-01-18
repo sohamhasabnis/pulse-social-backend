@@ -22,6 +22,11 @@ public class GlobalExceptionHandler {
 
            return new ResponseEntity<>(errorResponseDTO, HttpStatus.CONFLICT);
        }
+       if(globalDbException instanceof AuthenticationFailedException)
+       {
+           ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(ZonedDateTime.now(ZoneOffset.UTC), "UNAUTHORIZED", globalDbException.errorCode, "Invalid email or password", "");
+           return new ResponseEntity<>(errorResponseDTO, HttpStatus.UNAUTHORIZED);
+       }
        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 }

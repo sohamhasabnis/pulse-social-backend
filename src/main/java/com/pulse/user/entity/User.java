@@ -25,6 +25,10 @@ public class User {
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
+    protected User()
+    {
+
+    }
     public User(String username, String email, String passwordHash, Status status, Instant createdAt)
     {
         this.username = username;
