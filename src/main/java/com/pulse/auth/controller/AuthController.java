@@ -5,6 +5,8 @@ import com.pulse.auth.service.UserLoginService;
 import com.pulse.auth.service.UserRegistrationService;
 import com.pulse.common.exception.AuthenticationFailedException;
 import com.pulse.common.exception.GlobalDbException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -18,6 +20,7 @@ import java.time.Duration;
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
     private final UserRegistrationService userRegistrationService;
     private final UserLoginService userLoginService;
 
@@ -53,7 +56,9 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<LoginTokenResponse> refresh(@CookieValue(name = "refresh_token", required = false) String refresh) throws AuthenticationFailedException {
+    public ResponseEntity<LoginTokenResponse> refresh(
+            @CookieValue(name = "refresh_token", required = false) String refresh
+    ) throws AuthenticationFailedException {
         if(refresh == null || refresh.isEmpty())
         {
             new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
@@ -63,5 +68,26 @@ public class AuthController {
                 .body(loginTokenResponse);
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+            @CookieValue(name = "refresh_token", required = false) String refreshToken
+    ) {
+        if (refreshToken != null && !refreshToken.isEmpty())
+        {
+            log.info("Running logout");
+            userLoginService.logout(refreshToken);
+        }
+
+        ResponseCookie deleteCookie = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/api/v1/auth/refresh")
+                .maxAge(0)
+                .sameSite("Lax")
+                .build();
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, "")
+                .build();
+    }
 
 }

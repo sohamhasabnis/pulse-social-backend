@@ -10,4 +10,8 @@ public interface RefreshTokenService {
     RefreshTokenEntity createRefreshToken(UUID userId);
 
     RefreshTokenEntity isTokenActive(String token) throws AuthenticationFailedException;
+
+    RefreshTokenEntity getToken(String token);
+
+    RefreshTokenEntity setRevokedTrue(RefreshTokenEntity refreshTokenEntity);
 }

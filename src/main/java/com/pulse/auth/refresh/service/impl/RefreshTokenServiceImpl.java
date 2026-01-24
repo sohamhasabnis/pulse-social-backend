@@ -55,4 +55,19 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         }
          return refreshTokenEntity;
     }
+
+    @Override
+    public RefreshTokenEntity getToken(String token) {
+        Optional<RefreshTokenEntity> optionalRefreshToken = refreshTokenRepository.findByToken(token);
+
+        return optionalRefreshToken.orElse(null);
+
+    }
+
+    @Override
+    public RefreshTokenEntity setRevokedTrue(RefreshTokenEntity refreshTokenEntity)
+    {
+        return refreshTokenRepository.save(refreshTokenEntity);
+    }
+
 }

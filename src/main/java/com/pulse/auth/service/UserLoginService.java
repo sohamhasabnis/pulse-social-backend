@@ -11,4 +11,6 @@ public interface UserLoginService {
     public LoginResponseRecord login(LoginRequest loginRequest) throws GlobalDbException;
 
     public LoginTokenResponse refreshAccessToken(String refreshToken) throws AuthenticationFailedException;
+
+    void logout(String accessToken);
 }
