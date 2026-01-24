@@ -1,7 +1,13 @@
 package com.pulse.auth.service.impl;
 
 import com.pulse.auth.dto.LoginRequest;
+import com.pulse.auth.dto.LoginResponseRecord;
+import com.pulse.auth.dto.LoginTokenResponse;
 import com.pulse.auth.dto.RegisterResponse;
+import com.pulse.auth.jwt.AccessTokenRecord;
+import com.pulse.auth.jwt.JwtTokenService;
+import com.pulse.auth.refresh.entity.RefreshTokenEntity;
+import com.pulse.auth.refresh.service.RefreshTokenService;
 import com.pulse.auth.service.UserLoginService;
 import com.pulse.common.exception.AuthenticationFailedException;
 import com.pulse.common.exception.GlobalDbException;
@@ -20,15 +26,21 @@ public class UserLoginServiceImpl implements UserLoginService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenService jwtTokenService;
+    private final RefreshTokenService refreshTokenService;
 
     @Autowired
-    public UserLoginServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserLoginServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder,
+                                JwtTokenService jwtTokenService,
+                                RefreshTokenService refreshTokenService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtTokenService = jwtTokenService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @Override
-    public RegisterResponse login(LoginRequest loginRequest) throws GlobalDbException {
+    public LoginResponseRecord login(LoginRequest loginRequest) throws GlobalDbException {
 
         Optional<User> userOptional = userRepository.findByEmail(loginRequest.getEmail());
         if(userOptional.isEmpty())
@@ -48,6 +60,11 @@ public class UserLoginServiceImpl implements UserLoginService {
             throw new AuthenticationFailedException("E004", "password is wrong");
         }
 
-        return new RegisterResponse(user.getId(), user.getUsername(), user.getEmail(), user.getCreatedAt());
+        AccessTokenRecord accessToken = jwtTokenService.generateAccessToken(user.getId(), user.getEmail());
+
+        RefreshTokenEntity refreshTokenEntity = refreshTokenService.createRefreshToken(user.getId());
+
+        LoginTokenResponse loginTokenResponse = new LoginTokenResponse(accessToken.accessToken(), accessToken.expiresAt());
+        return new LoginResponseRecord(loginTokenResponse, refreshTokenEntity);
     }
 }

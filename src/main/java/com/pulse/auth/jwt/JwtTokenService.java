@@ -8,7 +8,6 @@ import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 
 import java.text.ParseException;
@@ -28,21 +27,22 @@ public class JwtTokenService {
         this.keyProvider = keyProvider;
     }
 
-    public String generateAccessToken(UUID userId, String email) {
+    public AccessTokenRecord generateAccessToken(UUID userId, String email) {
       Instant instant = Instant.now();
 
+      Date expiresAt = Date.from(instant.plus(accessTokenExpiry));
       JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
               .subject(userId.toString())
               .claim("email", email)
               .issueTime(Date.from(instant))
-              .expirationTime(Date.from(instant.plus(accessTokenExpiry)))
+              .expirationTime(expiresAt)
               .build();
 
       SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.RS256), claimsSet);
 
         try {
             signedJWT.sign(new RSASSASigner(keyProvider.getPrivateKey()));
-            return signedJWT.serialize();
+            return new AccessTokenRecord(signedJWT.serialize(), expiresAt.toInstant().toEpochMilli());
         } catch (JOSEException e) {
             throw new RuntimeException(e);
         }

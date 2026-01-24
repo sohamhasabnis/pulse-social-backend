@@ -3,6 +3,7 @@ package com.pulse.auth.refresh.service.impl;
 import com.pulse.auth.refresh.entity.RefreshTokenEntity;
 import com.pulse.auth.refresh.repository.RefreshTokenRepository;
 import com.pulse.auth.refresh.service.RefreshTokenService;
+import com.pulse.common.exception.AuthenticationFailedException;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -32,22 +33,26 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     }
 
     @Override
-    public boolean isTokenActive(String token) {
+    public RefreshTokenEntity isTokenActive(String token) throws AuthenticationFailedException {
         Optional<RefreshTokenEntity> optionalRefreshToken = refreshTokenRepository.findByToken(token);
 
         if(optionalRefreshToken.isEmpty()) {
-            return false;
+            throw new AuthenticationFailedException("E006", "Refresh token expired");
         }
 
         RefreshTokenEntity refreshTokenEntity = optionalRefreshToken.get();
 
         if(refreshTokenEntity.isRevoked())
         {
-            return false;
+            throw new AuthenticationFailedException("E006", "Refresh token expired");
         }
 
         Instant date = Instant.now();
 
-        return !date.isAfter(refreshTokenEntity.getExpiresAt());
+         if(date.isAfter(refreshTokenEntity.getExpiresAt()))
+        {
+            throw new AuthenticationFailedException("E006", "Refresh token expired");
+        }
+         return refreshTokenEntity;
     }
 }

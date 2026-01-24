@@ -1,19 +1,21 @@
 package com.pulse.auth.controller;
 
-import com.pulse.auth.dto.LoginRequest;
-import com.pulse.auth.dto.RegisterRequest;
-import com.pulse.auth.dto.RegisterResponse;
+import com.pulse.auth.dto.*;
 import com.pulse.auth.service.UserLoginService;
 import com.pulse.auth.service.UserRegistrationService;
 import com.pulse.common.exception.AuthenticationFailedException;
 import com.pulse.common.exception.GlobalDbException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpClientErrorException;
+
+import java.time.Duration;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -39,9 +41,18 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<RegisterResponse> login(@RequestBody LoginRequest loginRequest) throws GlobalDbException {
-        RegisterResponse registerResponse = userLoginService.login(loginRequest);
-        return new ResponseEntity<>(registerResponse, HttpStatus.OK);
+    public ResponseEntity<LoginTokenResponse> login(@RequestBody LoginRequest loginRequest) throws GlobalDbException {
+        LoginResponseRecord loginResponseRecord = userLoginService.login(loginRequest);
+        ResponseCookie responseCookie = ResponseCookie.from("refresh_token", loginResponseRecord.refreshTokenEntity().getToken())
+                .httpOnly(true)
+                .secure(true)
+                .path("/api/v1/auth/refresh")
+                .maxAge(Duration.ofDays(30))
+                .sameSite("Lax")
+                .build();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, responseCookie.toString())
+                .body(loginResponseRecord.loginTokenResponse());
     }
 
 }
