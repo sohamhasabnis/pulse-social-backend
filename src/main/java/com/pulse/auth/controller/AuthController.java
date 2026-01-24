@@ -9,10 +9,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 
 import java.time.Duration;
@@ -45,7 +42,7 @@ public class AuthController {
         LoginResponseRecord loginResponseRecord = userLoginService.login(loginRequest);
         ResponseCookie responseCookie = ResponseCookie.from("refresh_token", loginResponseRecord.refreshTokenEntity().getToken())
                 .httpOnly(true)
-                .secure(true)
+                .secure(false)
                 .path("/api/v1/auth/refresh")
                 .maxAge(Duration.ofDays(30))
                 .sameSite("Lax")
@@ -54,5 +51,17 @@ public class AuthController {
                 .header(HttpHeaders.SET_COOKIE, responseCookie.toString())
                 .body(loginResponseRecord.loginTokenResponse());
     }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<LoginTokenResponse> refresh(@CookieValue(name = "refresh_token", required = false) String refresh) throws AuthenticationFailedException {
+        if(refresh == null || refresh.isEmpty())
+        {
+            new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        LoginTokenResponse loginTokenResponse = userLoginService.refreshAccessToken(refresh);
+        return ResponseEntity.ok()
+                .body(loginTokenResponse);
+    }
+
 
 }

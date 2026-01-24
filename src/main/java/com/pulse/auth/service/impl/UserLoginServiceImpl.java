@@ -67,4 +67,15 @@ public class UserLoginServiceImpl implements UserLoginService {
         LoginTokenResponse loginTokenResponse = new LoginTokenResponse(accessToken.accessToken(), accessToken.expiresAt());
         return new LoginResponseRecord(loginTokenResponse, refreshTokenEntity);
     }
+
+    @Override
+    public LoginTokenResponse refreshAccessToken(String refreshToken) throws AuthenticationFailedException {
+        RefreshTokenEntity refreshTokenEntity = refreshTokenService.isTokenActive(refreshToken);
+
+        User user = userRepository.getReferenceById(refreshTokenEntity.getUserId());
+
+        AccessTokenRecord accessTokenRecord = jwtTokenService.generateAccessToken(user.getId(), user.getEmail());
+
+        return new LoginTokenResponse(accessTokenRecord.accessToken(), accessTokenRecord.expiresAt());
+    }
 }
