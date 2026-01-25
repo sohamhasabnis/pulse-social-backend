@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -70,4 +71,35 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         return refreshTokenRepository.save(refreshTokenEntity);
     }
 
+    @Override
+    public RefreshTokenEntity rotate(String token) throws AuthenticationFailedException {
+        Optional<RefreshTokenEntity> optionalRefreshToken = refreshTokenRepository.findByToken(token);
+        if(optionalRefreshToken.isEmpty())
+        {
+            throw new AuthenticationFailedException("EOO8", "No Valid token");
+        }
+
+        RefreshTokenEntity refreshToken = optionalRefreshToken.get();
+        if(refreshToken.isRevoked())
+        {
+            List<RefreshTokenEntity> byUserIdAndRevoked = refreshTokenRepository.findByUserIdAndRevoked(refreshToken.getUserId(), false);
+            for(RefreshTokenEntity entity : byUserIdAndRevoked)
+            {
+                RefreshTokenEntity newRefreshEntity = createRefreshTokenEntity(entity, true);
+                refreshTokenRepository.save(newRefreshEntity);
+            }
+        }
+
+        refreshTokenRepository.save(createRefreshTokenEntity(refreshToken, true));
+
+        RefreshTokenEntity newToken = createRefreshToken(refreshToken.getUserId());
+        refreshTokenRepository.save(newToken);
+        return newToken;
+    }
+
+    private RefreshTokenEntity createRefreshTokenEntity(RefreshTokenEntity refreshTokenEntity, boolean revoked)
+    {
+        return new RefreshTokenEntity(refreshTokenEntity.getId(),
+                refreshTokenEntity.getToken(), refreshTokenEntity.getUserId(), refreshTokenEntity.getExpiresAt(), refreshTokenEntity.getCreatedAt(), revoked);
+    }
 }

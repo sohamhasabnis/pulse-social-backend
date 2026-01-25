@@ -14,4 +14,6 @@ public interface RefreshTokenService {
     RefreshTokenEntity getToken(String token);
 
     RefreshTokenEntity setRevokedTrue(RefreshTokenEntity refreshTokenEntity);
+
+    RefreshTokenEntity rotate(String token) throws AuthenticationFailedException;
 }

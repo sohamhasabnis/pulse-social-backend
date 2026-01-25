@@ -63,9 +63,19 @@ public class AuthController {
         {
             new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
-        LoginTokenResponse loginTokenResponse = userLoginService.refreshAccessToken(refresh);
+        LoginResponseRecord loginResponseRecord = userLoginService.refreshAccessToken(refresh);
+
+        ResponseCookie responseCookie = ResponseCookie.from("refresh_token", loginResponseRecord.refreshTokenEntity().getToken())
+                .httpOnly(true)
+                .secure(false)
+                .path("/api/v1/auth/refresh")
+                .maxAge(Duration.ofDays(30))
+                .sameSite("Lax")
+                .build();
+
         return ResponseEntity.ok()
-                .body(loginTokenResponse);
+                .header(HttpHeaders.SET_COOKIE, responseCookie.toString())
+                .body(loginResponseRecord.loginTokenResponse());
     }
 
     @PostMapping("/logout")
